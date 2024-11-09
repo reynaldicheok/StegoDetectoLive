@@ -7,10 +7,11 @@ from StegoDetectoLive.modules.DatabaseLogic import getSimilarImages
 # this function generates a histogram, comparing the pixel values and no. pixels between two images
 def histogram(suspect_image: bytes):
     # reads the images, based on the filename
-    img_1 = cv2.imdecode(suspect_image, cv2.IMREAD_COLOR)
     suspect_image_nparray = np.asarray(bytearray(suspect_image), dtype="uint8")
-    original_image = getSimilarImages(suspect_image_nparray)
-    img_2 = cv2.imread("..\\" + original_image)
+    img_1 = cv2.imdecode(suspect_image, cv2.IMREAD_COLOR)
+
+    original_image_path = getSimilarImages(suspect_image_nparray)
+    img_2 = cv2.imread("..\\" + original_image_path)
 
     # initiate the variables
     x1, y1, x2, y2 = [], [], [], []
