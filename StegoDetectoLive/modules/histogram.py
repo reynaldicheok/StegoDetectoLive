@@ -1,11 +1,16 @@
+import numpy as np
 from matplotlib import pyplot as plt
 import cv2
-from PIL import Image
+from StegoDetectoLive.modules.DatabaseLogic import getSimilarImages
+
+
 # this function generates a histogram, comparing the pixel values and no. pixels between two images
-def histogram(suspect_image, original_image):
+def histogram(suspect_image: bytes):
     # reads the images, based on the filename
-    img_1 = cv2.imread(suspect_image)
-    img_2 = cv2.imread(original_image)
+    img_1 = cv2.imdecode(suspect_image, cv2.IMREAD_COLOR)
+    suspect_image_nparray = np.asarray(bytearray(suspect_image), dtype="uint8")
+    original_image = getSimilarImages(suspect_image_nparray)
+    img_2 = cv2.imread("..\\" + original_image)
 
     # initiate the variables
     x1, y1, x2, y2 = [], [], [], []
@@ -65,4 +70,7 @@ def histogram(suspect_image, original_image):
     plt.ylabel("Difference")
     plt.show()
 
-histogram("./steganography_image.png","Monalisa.png")
+# Test by reading as bytes
+with open("steganography_image.png", "rb") as f:
+     image = f.read()
+     histogram(image)
