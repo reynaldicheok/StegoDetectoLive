@@ -1,8 +1,11 @@
+import os
 import sqlite3
 from PIL import Image
 import imagehash
 from scipy.spatial import distance
 import io
+
+from StegoDetectoLive.modules.database_generation import database_generation
 
 
 def hammingdistance(a, b):
@@ -13,7 +16,7 @@ def hammingdistance(a, b):
 
 
 def getSimilarImages(image: bytes) -> str:
-    conn = sqlite3.connect('../images.db')
+    conn = sqlite3.connect('images.db')
     conn.create_function("hammingdistance", 2, hammingdistance)
 
     c = conn.cursor()
@@ -22,3 +25,6 @@ def getSimilarImages(image: bytes) -> str:
     result = c.fetchall()
     conn.close()
     return result[0][0]
+
+if not os.path.exists("images.db"):
+    database_generation()
