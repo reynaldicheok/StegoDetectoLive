@@ -1,3 +1,5 @@
+import os
+
 from mitmproxy import http
 import json
 from StegoDetectoLive.modules.histogram import histogram
@@ -6,6 +8,10 @@ from StegoDetectoLive.modules.histogram import histogram
 with open("config.json", "r") as f:
     config = json.load(f)
     min_detections = config["min_detections"]
+
+# Create a directory to store the images
+if not os.path.exists("triage"):
+    os.makedirs("triage")
 
 def request(flow: http.HTTPFlow) -> None:
     print(flow.request.content)

@@ -1,9 +1,11 @@
+from io import BytesIO
+
 from PIL import Image
 import numpy as np
 from scipy.stats import entropy
 
-def get_lsb(image_path):
-    img = Image.open(image_path)
+def get_lsb(image: bytes):
+    img = Image.open(BytesIO(image))
     # Convert the image to RGB mode if it's not in that mode.
     img = img.convert("RGB")
     pixels = np.array(img)
@@ -54,9 +56,9 @@ def check_eof_marker(lsb_values):
     else:
         return False, None
 
-def lsb_stego_detection(image_path):
+def lsb_stego_detection(image: bytes):
     # Extract the LSBs from the image
-    lsb_values = get_lsb(image_path)
+    lsb_values = get_lsb(image)
 
     # Analyze the LSBs to detect any hidden data
     lsb_entropy, entropy_label = analyze_lsb(lsb_values)
