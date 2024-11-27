@@ -1,8 +1,8 @@
 from io import BytesIO
-
 from PIL import Image
 import numpy as np
 from scipy.stats import entropy
+import re
 
 def get_lsb(image: bytes):
     img = Image.open(BytesIO(image))
@@ -56,6 +56,45 @@ def check_eof_marker(lsb_values):
     else:
         return False, None
 
+def extract_text_from_lsb(lsb_values, eof_marker):
+    # Convert the LSB values into a binary string
+    binary_message = ''.join(map(str, lsb_values))
+
+    # Find where the EOF marker occurs in the binary stream
+    end_index = binary_message.find(eof_marker)
+
+    # If we can't find the EOF marker, there is no message
+    if end_index == -1:
+        return None
+
+    # Trim the binary message to remove the EOF marker and everything after it also check for the past 16 characters
+    start_index = end_index - 128
+    binary_message = binary_message[start_index:end_index]
+
+    # Convert the binary message back to characters (bytes)
+    binary_message = binary_message[:len(binary_message) // 8 * 8]
+
+    # Split the binary string into chunks of 8 bits (1 byte each)
+    byte_list = [binary_message[i:i + 8] for i in range(0, len(binary_message), 8)]
+
+    # Convert each byte into a character
+    decoded_message = ''
+    for byte in byte_list:
+        decoded_message += chr(int(byte, 2))
+
+    # Use regex to check if the message contains garbage
+    if is_message_valid(decoded_message):
+        return decoded_message
+    else:
+        return None  # Return None if the message is not valid
+
+def is_message_valid(message):
+    # Use regex to check for non-ASCII characters if there is then its probably garbage
+    if re.search(r'[^\x00-\x7F]', message):
+        return False
+    else:
+        return True
+
 def lsb_stego_detection(image: bytes):
     # Extract the LSBs from the image
     lsb_values = get_lsb(image)
@@ -64,6 +103,17 @@ def lsb_stego_detection(image: bytes):
     lsb_entropy, entropy_label = analyze_lsb(lsb_values)
     proportion_zero, proportion_one, distribution_label = analyze_lsb_distribution(lsb_values)
     eof_stego, eof_marker_used = check_eof_marker(lsb_values)
+    # If an EOF marker was found, extract the LSBs before it
+    if eof_stego:
+        extracted_text = extract_text_from_lsb(lsb_values, eof_marker_used)
+
+        if extracted_text:
+            # If extracted text is meaningful words, we flag it as steganography
+            eof_stego = True
+        else:
+            # Else do not flag it as steganography if it's random garbage
+            extracted_text = "Random Garbage"
+            eof_stego = False
 
     metadata = {
         "entropy": lsb_entropy,
@@ -72,7 +122,8 @@ def lsb_stego_detection(image: bytes):
         "proportion_one": proportion_one,
         "distribution_label": distribution_label,
         "eof_marker_detected": eof_stego,
-        "eof_marker_used": eof_marker_used
+        "eof_marker_used": eof_marker_used,
+        "extract_text": extracted_text
     }
 
     # Combine all detection results to determine if steganography is present

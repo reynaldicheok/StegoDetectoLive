@@ -1,22 +1,23 @@
 import numpy as np
 from PIL import Image
+from io import BytesIO
 
-def calculate_pixel_pair_difference(image):
-    height, width = image.shape
+def calculate_pixel_pair_difference(image_bytes: bytes):
+    # Load image from bytes and greyscale it
+    img = Image.open(BytesIO(image_bytes)).convert("L")
+    img_array = np.array(img)
+
+    height, width = img_array.shape
     differences = []
     for row in range(height):
         for col in range(width - 1):  # Avoid out-of-bound errors
-            diff = abs(int(image[row, col]) - int(image[row, col + 1])) / 255.0
+            diff = abs(int(img_array[row, col]) - int(img_array[row, col + 1])) / 255.0
             differences.append(diff)
     return differences
 
-def detect_stego(image_path, threshold):
-    # Load image and convert to grayscale
-    img = Image.open(image_path).convert("L")
-    img_array = np.array(img)
-
+def detect_stego(image_bytes: bytes, threshold: float):
     # Calculate pixel pair differences
-    differences = calculate_pixel_pair_difference(img_array)
+    differences = calculate_pixel_pair_difference(image_bytes)
 
     # Count normalized differences exceeding the threshold
     anomalies = sum(1 for diff in differences if diff > threshold)
