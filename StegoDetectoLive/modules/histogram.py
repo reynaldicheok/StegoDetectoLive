@@ -1,8 +1,6 @@
 import numpy as np
-from matplotlib import pyplot as plt
 import cv2
 from StegoDetectoLive.modules.DatabaseLogic import getSimilarImages
-
 
 # this function generates a histogram, comparing the pixel values and no. pixels between two images
 def histogram(suspect_image: bytes):
@@ -23,13 +21,6 @@ def histogram(suspect_image: bytes):
     # calculates the histogram to plot, for both images
     histogram_1 = cv2.calcHist([img_1], [0], None, [256], [0, 256])
     histogram_2 = cv2.calcHist([img_2], [0], None, [256], [0, 256])
-
-    # # plots the histogram and adds the labels for both lines
-    # plt.plot(histogram_1, label="Suspicious Image")
-    # plt.plot(histogram_2, label="Original Image")
-    # plt.xlabel("Pixel Value")
-    # plt.ylabel("No. Pixels")
-    # plt.legend(loc='upper left')
 
     # creates a list of the values in the x axis for the histograms
     for n in range(256):
@@ -64,14 +55,6 @@ def histogram(suspect_image: bytes):
     r_percent = round(percent, 2)
     print("Total number of changes detected: ", dif, "/", len(calc_dist), " pixels have been altered (", r_percent, "%)")
 
-    # # displays the histogram of image 1 and 2
-    # plt.show()
-    #
-    # # plots, labels and displays the difference values
-    # plt.plot(x1, calc_dist, label="Difference")
-    # plt.xlabel("Pixel Value")
-    # plt.ylabel("Difference")
-    # plt.show()
     if r_percent > 70:
         return True
     else:
