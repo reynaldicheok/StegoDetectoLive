@@ -103,6 +103,17 @@ def lsb_stego_detection(image: bytes):
     lsb_entropy, entropy_label = analyze_lsb(lsb_values)
     proportion_zero, proportion_one, distribution_label = analyze_lsb_distribution(lsb_values)
     eof_stego, eof_marker_used = check_eof_marker(lsb_values)
+
+    metadata = {
+        "entropy": lsb_entropy,
+        "entropy_label": entropy_label,
+        "proportion_zero": proportion_zero,
+        "proportion_one": proportion_one,
+        "distribution_label": distribution_label,
+        "eof_marker_detected": eof_stego,
+        "eof_marker_used": eof_marker_used,
+    }
+
     # If an EOF marker was found, extract the LSBs before it
     if eof_stego:
         extracted_text = extract_text_from_lsb(lsb_values, eof_marker_used)
@@ -114,17 +125,7 @@ def lsb_stego_detection(image: bytes):
             # Else do not flag it as steganography if it's random garbage
             extracted_text = "Random Garbage"
             eof_stego = False
-
-    metadata = {
-        "entropy": lsb_entropy,
-        "entropy_label": entropy_label,
-        "proportion_zero": proportion_zero,
-        "proportion_one": proportion_one,
-        "distribution_label": distribution_label,
-        "eof_marker_detected": eof_stego,
-        "eof_marker_used": eof_marker_used,
-        "extract_text": extracted_text
-    }
+        metadata["extracted_text"] = extracted_text
 
     # Combine all detection results to determine if steganography is present
     is_steganography = entropy_label == "Low" or distribution_label == "Skewed" or eof_stego
