@@ -1,9 +1,8 @@
 import os
 from datetime import datetime
-
 from mitmproxy import http
 import json
-
+from requests_toolbelt.multipart import decoder
 from StegoDetectoLive.modules.LSBAnalysis import lsb_stego_detection
 from StegoDetectoLive.modules.histogram import histogram
 
@@ -18,10 +17,23 @@ if not os.path.exists("triage"):
     os.makedirs("triage")
 
 
-# def request(flow: http.HTTPFlow) -> None:
-#     # Block all images requests
-#     if "image" in flow.request.headers[b"Content-Type"]:
-#         flow.kill()
+def request(flow: http.HTTPFlow) -> None:
+    # Block all images requests
+    if b"Content-Type" in flow.request.headers and "image" in flow.request.headers[b"Content-Type"]:
+        to_kill = check_Stego(flow.request.content)
+        if to_kill:
+            flow.kill()
+
+    if b"Content-Type" in flow.request.headers and "multipart/form-data" in flow.request.headers[b"Content-Type"]:
+        to_kill = False
+        multipart_data = decoder.MultipartDecoder(flow.request.content, flow.request.headers["Content-Type"])
+        for part in multipart_data.parts:
+            try:
+                to_kill = check_Stego(part.content)
+            except Exception as e:
+                print("Not an image")
+        if to_kill:
+            flow.kill()
 
 
 def response(flow: http.HTTPFlow) -> None:
