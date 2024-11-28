@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, send_from_directory
 import os
 import xxhash
 
@@ -32,6 +32,10 @@ def upload_file():
         filepath = os.path.join(app.config['UPLOAD_FOLDER'], new_filename)
         file.save(filepath)
         return f'File successfully uploaded to {filepath}'
+
+@app.route('/uploads/<filename>')
+def uploaded_file(filename):
+    return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
 
 
 app.run()
