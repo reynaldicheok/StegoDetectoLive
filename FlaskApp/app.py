@@ -33,6 +33,7 @@ def upload_file():
         file.save(filepath)
         return f'File successfully uploaded to {filepath}'
 
+
 @app.route('/uploads/<filename>')
 def uploaded_file(filename):
     return send_from_directory(app.config['UPLOAD_FOLDER'], filename)

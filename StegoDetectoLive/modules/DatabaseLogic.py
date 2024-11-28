@@ -24,6 +24,8 @@ def getSimilarImages(image: bytes) -> str:
     c.execute("SELECT path FROM images WHERE hammingdistance(phash, ?) < 0.1", (phash,))
     result = c.fetchall()
     conn.close()
+    if len(result) == 0:
+        return None
     return result[0][0]
 
 if not os.path.exists("images.db"):

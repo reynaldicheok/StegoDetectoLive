@@ -11,6 +11,8 @@ def histogram(suspect_image: bytes):
     img_1 = cv2.imdecode(suspect_image_nparray, cv2.IMREAD_COLOR)
 
     original_image_path = getSimilarImages(suspect_image_nparray)
+    if original_image_path is None:
+        return False
     img_2 = cv2.imread(".\\" + original_image_path)
 
     # initiate the variables
