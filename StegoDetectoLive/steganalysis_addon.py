@@ -67,6 +67,7 @@ def response(flow: http.HTTPFlow) -> None:
     for fileType in fileTypes:
         if fileType.file_extension in img_types_list:
             isImage = True
+            fileExtension = fileType.file_extension
             break
 
     if isImage:
