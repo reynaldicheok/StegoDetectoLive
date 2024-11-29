@@ -93,7 +93,7 @@ def check_Stego(data, fileExtension):
     isStegoList.append(histogramIsStego)
 
     detections = isStegoList.count(True)
-    if detections >= min_detections or allow_all_traffic_and_save_data:
+    if detections >= min_detections:
         # Save the image to the triage folder
         with open("triage/{}.{}".format(datetime.now().strftime("%Y%m%d%H%M%S"), fileExtension), "wb") as f:
             f.write(data)
