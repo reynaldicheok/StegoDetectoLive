@@ -18,6 +18,8 @@ if not os.path.exists("triage"):
     os.makedirs("triage")
 
 img_types_list = ["png", "jpg", "jpeg"]
+
+
 def request(flow: http.HTTPFlow) -> None:
     # For multipart/form-data requests
     if b"Content-Type" in flow.request.headers and "multipart/form-data" in flow.request.headers[b"Content-Type"]:
@@ -92,7 +94,6 @@ def check_Stego(data, fileExtension):
 
     detections = isStegoList.count(True)
     if detections >= min_detections or allow_all_traffic_and_save_data:
-        print("Steganography image detected")
         # Save the image to the triage folder
         with open("triage/{}.{}".format(datetime.now().strftime("%Y%m%d%H%M%S"), fileExtension), "wb") as f:
             f.write(data)
