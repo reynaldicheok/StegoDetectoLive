@@ -232,12 +232,18 @@ def image_analyser(img: bytes, masks):
     print("Analysing LSBs")
 
     gpercent = analyseLSBs(pix, chosen_mask, neg_mask)
-
+    metadata = {
+        "width": width,
+        "height": height,
+        "total_pixels": width * height,
+        "mask_size": (len(chosen_mask), len(chosen_mask[0])),
+        "gpercent": gpercent,
+    }
     print("")
     if gpercent == 0:
         print("Unable to calculate the percent of the pixels")
         encodedpercent = "?"
-        return encodedpercent,False
+        return encodedpercent,False,metadata
     else:
         encodedpercent = gpercent
         print("")
@@ -249,9 +255,9 @@ def image_analyser(img: bytes, masks):
         print("Encoded Percent: {:.3f}".format(encodedpercent))
 
         if encodedpercent < 0.07:
-            return False
+            return False,metadata
         else:
-            return True
+            return True,metadata
 
 
 
