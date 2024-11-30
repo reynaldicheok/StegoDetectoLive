@@ -8,89 +8,89 @@ def analysis(image_bytes: bytes, colour: int):
     # Load image from bytes and greyscale it
     img = Image.open(BytesIO(image_bytes))
     img_array = np.array(img)
-    height = img.height
-    width = img.width
+    image_height = img.height
+    image_width = img.width
 
-    P = X = Y = Z = W = 0
+    total_pairs = group_x = group_y = group_z = group_w = 0
 
-    for row in range(height):
-        for col in range(0, width - 1, 2):
+    for row in range(image_height):
+        for col in range(0, image_width - 1, 2):
             # Get rgb values of pixel pair
             pixel1 = img_array[row, col]
             pixel2 = img_array[row, col + 1]
 
-            colour_pixel1 = pixel1[colour]
-            colour_pixel2 = pixel2[colour]
+            channel_pixel1 = pixel1[colour]
+            channel_pixel2 = pixel2[colour]
 
             msb_mask = 0b11111110
-            if (colour_pixel1 & msb_mask) == (colour_pixel2 & msb_mask) and (colour_pixel1 & 1) != (colour_pixel2 & 1):
-                W += 1
-            if colour_pixel1 == colour_pixel2:
-                Z += 1
-            if (colour_pixel2 & 1 == 0 and colour_pixel1 < colour_pixel2) or (
-                    colour_pixel2 & 1 != 0 and colour_pixel1 > colour_pixel2):
-                X += 1
-            if (colour_pixel2 & 1 == 0 and colour_pixel1 > colour_pixel2) or (
-                    colour_pixel2 & 1 != 0 and colour_pixel1 < colour_pixel2):
-                Y += 1
-            P += 1
+            if (channel_pixel1 & msb_mask) == (channel_pixel2 & msb_mask) and (channel_pixel1 & 1) != (channel_pixel2 & 1):
+                group_w += 1
+            if channel_pixel1 == channel_pixel2:
+                group_z += 1
+            if (channel_pixel2 & 1 == 0 and channel_pixel1 < channel_pixel2) or (
+                    channel_pixel2 & 1 != 0 and channel_pixel1 > channel_pixel2):
+                group_x += 1
+            if (channel_pixel2 & 1 == 0 and channel_pixel1 > channel_pixel2) or (
+                    channel_pixel2 & 1 != 0 and channel_pixel1 < channel_pixel2):
+                group_y += 1
+            total_pairs += 1
 
-    for row in range(0, height - 1, 2):
-        for col in range(width):
+    for row in range(0, image_height - 1, 2):
+        for col in range(image_width):
             # Get rgb values of pixel pair
             pixel1 = img_array[row, col]
             pixel2 = img_array[row + 1, col]
 
-            colour_pixel1 = pixel1[colour]
-            colour_pixel2 = pixel2[colour]
+            channel_pixel1 = pixel1[colour]
+            channel_pixel2 = pixel2[colour]
 
             msb_mask = 0b11111110
-            if (colour_pixel1 & msb_mask) == (colour_pixel2 & msb_mask) and (colour_pixel1 & 1) != (colour_pixel2 & 1):
-                W += 1
-            if colour_pixel1 == colour_pixel2:
-                Z += 1
-            if (colour_pixel2 & 1 == 0 and colour_pixel1 < colour_pixel2) or (
-                    colour_pixel2 & 1 != 0 and colour_pixel1 > colour_pixel2):
-                X += 1
-            if (colour_pixel2 & 1 == 0 and colour_pixel1 > colour_pixel2) or (
-                    colour_pixel2 & 1 != 0 and colour_pixel1 < colour_pixel2):
-                Y += 1
-            P += 1
+            if (channel_pixel1 & msb_mask) == (channel_pixel2 & msb_mask) and (channel_pixel1 & 1) != (channel_pixel2 & 1):
+                group_w += 1
+            if channel_pixel1 == channel_pixel2:
+                group_z += 1
+            if (channel_pixel2 & 1 == 0 and channel_pixel1 < channel_pixel2) or (
+                    channel_pixel2 & 1 != 0 and channel_pixel1 > channel_pixel2):
+                group_x += 1
+            if (channel_pixel2 & 1 == 0 and channel_pixel1 > channel_pixel2) or (
+                    channel_pixel2 & 1 != 0 and channel_pixel1 < channel_pixel2):
+                group_y += 1
+            total_pairs += 1
 
-    a = 0.5 * (W + Z)
-    b = 2 * X - P
-    c = Y - X
+    a = 0.5 * (group_w + group_z)
+    b = 2 * group_x - total_pairs
+    c = group_y - group_x
     if a == 0:
-        x = c / b
+        solution_x = c / b
     discriminant = pow(b, 2) - (4 * a * c)
     if discriminant >= 0:
-        rootpos = ((-1 * b) + math.sqrt(discriminant)) / (2 * a)
-        rootneg = ((-1 * b) - math.sqrt(discriminant)) / (2 * a)
-        if abs(rootpos) <= abs(rootneg):
-            x = rootpos
+        root_positive = ((-1 * b) + math.sqrt(discriminant)) / (2 * a)
+        root_negative = ((-1 * b) - math.sqrt(discriminant)) / (2 * a)
+        if abs(root_positive) <= abs(root_negative):
+            solution_x = root_positive
         else:
-            x = rootneg
+            solution_x = root_negative
     else:
-        x = c / b
+        solution_x = c / b
 
-    if x == 0:
-        x = c / b
-    return x
+    if solution_x == 0:
+        solution_x = c / b
+    return solution_x
 
 
 def detect_stego(image_bytes: bytes):
     red_results = analysis(image_bytes, 0)
     green_results = analysis(image_bytes, 1)
     blue_results = analysis(image_bytes, 2)
-    average = (red_results + green_results + blue_results) / 3
+    average_result = (red_results + green_results + blue_results) / 3
 
     metadata = {
         "Red": red_results,
         "Green": green_results,
         "Blue": blue_results,
-        "Average": average
+        "Average": average_result
     }
 
-    if average > 0.1:
+    if average_result > 0.1:
         return True, metadata
     return False, metadata
