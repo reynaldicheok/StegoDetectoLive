@@ -12,6 +12,8 @@ with open("config.json", "r") as f:
     config = json.load(f)
     min_detections = config["min_detections"]
     allow_all_traffic_and_save_data = config["allow_all_traffic_and_save_data"]
+    print(min_detections)
+    print(allow_all_traffic_and_save_data)
 
 # Create a directory to store the images
 if not os.path.exists("triage"):
@@ -99,7 +101,7 @@ def check_Stego(data, fileExtension):
             f.write(data)
         # Save the metadata to the triage folder
         with open("triage/{}.json".format(datetime.now().strftime("%Y%m%d%H%M%S")), "w") as f:
-            json.dump(stegoMetadata, f)
+            json.dump(stegoMetadata, f, indent=4)
         if not allow_all_traffic_and_save_data:
             return True
     return False

@@ -34,7 +34,7 @@ def main():
                 "min_detections": args.M,
                 "allow_all_traffic_and_save_data": args.T
             }
-            json.dump(config, f)
+            json.dump(config, f, indent=4)
 
     if args.R and args.F:
         print("Please select only one mode")
