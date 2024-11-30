@@ -2,7 +2,7 @@ import numpy as np
 import cv2
 from modules.DatabaseLogic import getSimilarImages
 
-# this function generates a histogram, comparing the pixel values and no. pixels between two images
+
 def histogram(suspect_image: bytes):
     # reads the images, based on the filename
     suspect_image_nparray = np.asarray(bytearray(suspect_image), dtype="uint8")
@@ -54,8 +54,14 @@ def histogram(suspect_image: bytes):
     percent = (dif / len(calc_dist)) * 100
     r_percent = round(percent, 2)
     print("Total number of changes detected: ", dif, "/", len(calc_dist), " pixels have been altered (", r_percent, "%)")
+    metadata = {
+        "histogram of suspect image": histogram_1.tolist(),
+        "filename of original image": original_image_path,
+        "histogram of original image": histogram_2.tolist(),
+        "percentage of changes": r_percent
+    }
 
     if r_percent > 70:
-        return True
+        return True, metadata
     else:
-        return False
+        return False, metadata

@@ -98,14 +98,15 @@ def check_Stego(data, fileExtension):
     # Histogram
     histogramIsStego = histogram(data)
     isStegoList.append(histogramIsStego)
+    stegoMetadata["Histogram"] = histogramIsStego
 
     #RSAnalysis
     RSAisStego, RSAMetaData = image_analyser(data,masks)
     isStegoList.append(RSAisStego)
-    stegoMetadata["RSA"] = RSAisStego
+    stegoMetadata["RSA"] = RSAMetaData
 
     #SamplePairs
-    SPisStego,SPMetaData = detect_stego(data)
+    SPisStego, SPMetaData = detect_stego(data)
     isStegoList.append(SPisStego)
     stegoMetadata["SP"] = SPMetaData
 
