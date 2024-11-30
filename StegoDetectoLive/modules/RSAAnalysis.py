@@ -1,125 +1,112 @@
 from PIL import Image
 import math
-import sys
-from matplotlib import pyplot as plt
-import cv2
-import scipy.stats
 
-
-# return the value of each pixel in the image
+# Function to extract pixel values from an image and organize them into a matrix
 def splitpixels(img):
-    pixRow = []
-    pix = []
-    pixNum = 0
+    row_pixels = []
+    pixel_matrix = []
+    pixel_count = 0
 
-    # getting the pixels from the image
+    # Get pixel data from the image
     pixels = img.getdata()
 
     for pixel in pixels:
-        # png
-        if isinstance(pixel, int):
-            # appending the value of each pixel in pixRow
-            pixRow.append(pixel)
+        # Append the R, G, B channels as tuples
+        row_pixels.append(pixel)
 
-        # jpg
-        else:
-            pixRow.append(pixel[0])
+        # Count the number of pixels
+        pixel_count += 1
 
-        # counting the no.of pixels
-        pixNum += 1
+        # If one row is completed, append row_pixels to pixel_matrix
+        if pixel_count % img.size[0] == 0:
+            pixel_matrix.append(row_pixels)
+            row_pixels = []
 
-        # If one rows is completed, then we append pixRow to pix and
-        # clear pixRow for next row of pixels
-        if pixNum % img.size[0] == 0:
-            pix.append(pixRow)
-            pixRow = []
+    print(pixel_count, "pixels")
 
-    print(pixNum, "pixels")
+    return pixel_matrix
 
-    return pix
+# Function to apply a mask to a group of pixels
+def groupmask(group_mask, mask):
+    # Initialize the new mask variable
+    group_mask_new = []
 
+    # Add to the list for the new mask (deep copy for RGB tuples)
+    for line in group_mask:
+        group_mask_new.append([list(pixel) for pixel in line])
 
-def groupmask(gmask, mask):
-    # gmask-->group
-    # initialise the new mask variable
-    newgroupmask = []
+    # Get dimensions of the mask
+    totalrow = len(group_mask_new)
+    totalcolumn = len(group_mask_new[0])
 
-    # adds to the list for the new mask
-    # copied group to newgroupmask
-    for line in gmask:
-        newgroupmask.append(list(line))
-
-    # sets the row and column values
-    totalrow = len(newgroupmask)
-    totalcolumn = len(newgroupmask[0])
-
-    # applying the mask on the group
+    # Apply the mask to the group
     for row in range(0, totalrow):
         for column in range(0, totalcolumn):
-            if newgroupmask[row][column] % 2 == 0:
-                newgroupmask[row][column] += mask[row][column]
-            else:
-                newgroupmask[row][column] -= mask[row][column]
+            for channel in range(3):  # Apply mask to each RGB channel
+                if group_mask_new[row][column][channel] % 2 == 0:
+                    group_mask_new[row][column][channel] += mask[row][column]
+                else:
+                    group_mask_new[row][column][channel] -= mask[row][column]
 
-    # returns the calculated mask
-    return newgroupmask
+    # Return the calculated mask
+    return group_mask_new
 
-
-# finding the difference between the pixel values in the group-->sum(abs(x(i+1)-x(i-1)))
+# Function to compute the "discrimination function"
 def discrimination_function(group):
-    # initialise variables
+    # Initialize variables
     amount = 0
     totalrow = len(group)
     totalcolumn = len(group[0])
 
-    # cycles through the columns using the discrimination function
+    # Compute absolute differences across columns (horizontal neighbors)
     for row in range(0, totalrow):
-        for column in range(0, totalcolumn):
-            if column < (totalcolumn - 1):
-                amount += abs(group[row][column] - group[row][column + 1])
-    # cycles through the rows using the discrimination function
+        for column in range(0, totalcolumn - 1):
+            for channel in range(3):  # Compute differences for each channel
+                amount += abs(group[row][column][channel] - group[row][column + 1][channel])
+
+    # Compute absolute differences across rows (vertical neighbors)
     for column in range(0, totalcolumn):
-        for row in range(0, totalrow):
-            if row < (totalrow - 1):
-                amount += abs(group[row][column] - group[row + 1][column])
+        for row in range(0, totalrow - 1):
+            for channel in range(3):  # Compute differences for each channel
+                amount += abs(group[row][column][channel] - group[row + 1][column][channel])
+
     return amount
 
-
 def breakimage(imagearray, maskk, position):
-    # position is the start of the group
-    # initiate a new list
     brokeimage = []
 
-    # copy mask rows into brokeimage
-    # brokeimage = [[0, 1, 0]]
+    # Initialize the new image subset with the same structure as the mask
     for line in maskk:
-        brokeimage.append(list(line))
+        brokeimage.append([[0] * 3 for _ in line])  # Initialize with dummy RGB values
 
-    # cycles through the image with the chosen mask to break the image
-    for temprow in range(0, len(maskk)):
-        for tempcol in range(0, len(maskk[0])):
-            brokeimage[temprow][tempcol] = imagearray[temprow + position[0]][tempcol + position[1]]
+    # Extract pixel values corresponding to the mask from the image
+    for temprow in range(len(maskk)):
+        for tempcol in range(len(maskk[0])):
+            pixel = imagearray[temprow + position[0]][tempcol + position[1]]
+            # Ensure consistency between grayscale and RGB formats
+            if isinstance(pixel, int):  # Grayscale pixel
+                brokeimage[temprow][tempcol] = [pixel, pixel, pixel]  # Duplicate grayscale value to RGB
+            else:  # RGB pixel
+                brokeimage[temprow][tempcol] = list(pixel)
 
     return brokeimage
 
-
 def analyseLSBs(imageBox, mask, neg_mask):
-    # r(p/2), s(p/2), r(1-p/2), s(1-p/2) and their negations
-    r_p2 = 0
-    s_p2 = 0
-    r_1p2 = 0
-    s_1p2 = 0
-    neg_r_p2 = 0
-    neg_s_p2 = 0
-    neg_r_1p2 = 0
-    neg_s_1p2 = 0
+    # Initialize counters for different types of pixel groups
+    reg_pos_2 = 0  # Count of regular groups for the positive mask
+    sing_pos_2 = 0  # Count of singular groups for the positive mask
+    reg_flip_pos_2 = 0  # Count of regular groups for the flipped positive mask
+    sing_flip_pos_2 = 0  # Count of singular groups for the flipped positive mask
+    neg_reg_pos_2 = 0  # Count of regular groups for the negative mask
+    neg_sing_pos_2 = 0  # Count of singular groups for the negative mask
+    neg_reg_flip_pos_2 = 0  # Count of regular groups for the flipped negative mask
+    neg_sing_flip_pos_2 = 0  # Count of singular groups for the flipped negative mask
 
-    # getting the dimesions of the image
+    # Get dimensions of the image
     imageRow = len(imageBox)
-    # 0th element is a list so it tells us the no.of columns
     imageCol = len(imageBox[0])
 
-    # getting the dimensions of the mask
+    # Get dimensions of the mask
     maskRow = len(mask)
     maskCol = len(mask[0])
 
@@ -129,128 +116,107 @@ def analyseLSBs(imageBox, mask, neg_mask):
 
     for row in range(0, imageRow):
         for column in range(0, imageCol):
+            if (row + 1) % maskRow == 0 and (column + 1) % maskCol == 0:
+                # This is the start of the group
+                pos = [row - maskRow + 1, column - maskCol + 1]
 
-            if (row + 1) % maskRow == 0:
-                if (column + 1) % maskCol == 0:
-                    # this is the start of the group
-                    pos = [row - maskRow + 1, column - maskCol + 1]
+                # Increment the number of groups
+                numCount += 1
 
-                    # number of groups
-                    numCount += 1
+                # Extract the mask group
+                breakimagebox = breakimage(imageBox, mask, pos)
 
-                    # taking the mask group
-                    breakimagebox = breakimage(imageBox, mask, pos)
+                flip_box = []
+                # Copy breakimagebox into flip_box
+                for line in breakimagebox:
+                    flip_box.append([list(pixel) for pixel in line])
 
-                    flip_box = []
-                    # copying the breakimagebox in flip_box
-                    for line in breakimagebox:
-                        flip_box.append(list(line))
+                # Flip pixel values in the group using F1 operation
+                for fliprow in range(0, len(breakimagebox)):
+                    for flipcolumn in range(0, len(breakimagebox[0])):
+                        for channel in range(3):  # Flip each channel
+                            if breakimagebox[fliprow][flipcolumn][channel] % 2 == 0:
+                                flip_box[fliprow][flipcolumn][channel] += 1
+                            else:
+                                flip_box[fliprow][flipcolumn][channel] -= 1
 
-                    # flipping the values of the pixels in the group using F1 operation(0<->1,2<->3 ,..., 254<->255)
-                    for fliprow in range(0, len(breakimagebox)):
-                        for flipcolumn in range(0, len(breakimagebox[0])):
-                            if breakimagebox[fliprow][flipcolumn] % 2 == 0:
-                                flip_box[fliprow][flipcolumn] += 1
-                            elif breakimagebox[fliprow][flipcolumn] % 2 == 1:
-                                flip_box[fliprow][flipcolumn] += -1
+                # Apply the discrimination function
+                discr_breakimagebox = discrimination_function(breakimagebox)
+                discr_mask_breakimagebox = discrimination_function(groupmask(breakimagebox, mask))
+                discr_neg_mask_breakimagebox = discrimination_function(groupmask(breakimagebox, neg_mask))
+                discr_flip_box = discrimination_function(flip_box)
+                discr_mask_flip_box = discrimination_function(groupmask(flip_box, mask))
+                discr_neg_mask_flip_box = discrimination_function(groupmask(flip_box, neg_mask))
 
-                    # The below code is used to find the no of singular groups and regular groups when there is 50% and 100% embedding(code 214-262)
-                    # f(G)
-                    # applying the discrimination function on the group
-                    discr_breakimagebox = discrimination_function(breakimagebox)
+                # Classify groups based on discrimination values
+                if discr_breakimagebox > discr_mask_breakimagebox:
+                    sing_pos_2 += 1
+                elif discr_breakimagebox < discr_mask_breakimagebox:
+                    reg_pos_2 += 1
 
-                    # f(G_m)
-                    # applied the mask on the group and then applied the discrimination function
-                    discr_mask_breakimagebox = discrimination_function(groupmask(breakimagebox, mask))
+                if discr_breakimagebox > discr_neg_mask_breakimagebox:
+                    neg_sing_pos_2 += 1
+                elif discr_breakimagebox < discr_neg_mask_breakimagebox:
+                    neg_reg_pos_2 += 1
 
-                    # f(G_(-m))
-                    # applying negative mask on the group and applying the discrimination function
-                    discr_neg_mask_breakimagebox = discrimination_function(groupmask(breakimagebox, neg_mask))
+                if discr_flip_box > discr_mask_flip_box:
+                    sing_flip_pos_2 += 1
+                elif discr_flip_box < discr_mask_flip_box:
+                    reg_flip_pos_2 += 1
 
-                    # f(F(G))
-                    # applying the discrimination function on the flipped group
-                    discr_flip_box = discrimination_function(flip_box)
-
-                    # f(F(G)_m)
-                    # applying the mask on the flipped pixel group and then applying the discrimination function
-                    discr_mask_flip_box = discrimination_function(groupmask(flip_box, mask))
-
-                    # f(F(G)_(-m))
-                    # applying the negative mask on the flipped group and then applying the discrimination function
-                    discr_neg_mask_flip_box = discrimination_function(groupmask(flip_box, neg_mask))
-
-                    # normal image
-                    # f(G) > f(G_m)  -> singular group
-                    if discr_breakimagebox > discr_mask_breakimagebox:
-                        s_p2 += 1
-                    # f(G_m) > f(G) -> regular group
-                    elif discr_breakimagebox < discr_mask_breakimagebox:
-                        r_p2 += 1
-
-                    # f(G) > f(G_(-m)) -> negative singular group
-                    if discr_breakimagebox > discr_neg_mask_breakimagebox:
-                        neg_s_p2 += 1
-                    # f(G_(-m)) > f(G) -> negative regular group
-                    elif discr_breakimagebox < discr_neg_mask_breakimagebox:
-                        neg_r_p2 += 1
-
-                    # flipped image with mask m
-                    # image group F1 operation followed by mask and discrimination
-                    # f(F(G)) > f(F(G)_(m))
-                    if discr_flip_box > discr_mask_flip_box:
-                        s_1p2 += 1
-                    elif discr_flip_box < discr_mask_flip_box:
-                        r_1p2 += 1
-
-                    # flipped image with mask -m
-                    if discr_flip_box < discr_neg_mask_flip_box:
-                        neg_r_1p2 += 1
-                    elif discr_flip_box > discr_neg_mask_flip_box:
-                        neg_s_1p2 += 1
+                if discr_flip_box < discr_neg_mask_flip_box:
+                    neg_reg_flip_pos_2 += 1
+                elif discr_flip_box > discr_neg_mask_flip_box:
+                    neg_sing_flip_pos_2 += 1
 
     if num == 0:
         return 0
 
-    # finding the message length by solving the quadratic
-    d0 = float(r_p2 - s_p2) / num
-    dn0 = float(neg_r_p2 - neg_s_p2) / num
-    d1 = float(r_1p2 - s_1p2) / num
-    dn1 = float(neg_r_1p2 - neg_s_1p2) / num
+    # Solve the quadratic equation to estimate the message length
+    d0 = float(reg_pos_2 - sing_pos_2) / num
+    dn0 = float(neg_reg_pos_2 - neg_sing_pos_2) / num
+    d1 = float(reg_flip_pos_2 - sing_flip_pos_2) / num
+    dn1 = float(neg_reg_flip_pos_2 - neg_sing_flip_pos_2) / num
 
     a = 2 * (d1 + d0)
     b = (dn0 - dn1 - d1 - 3 * d0)
     c = (d0 - dn0)
 
-    if b * b < 4 * a * c:
-        # avoid negative root
-        message_length = 0
-    elif a == 0:
-        # avoid deviding by zero
+    if b * b < 4 * a * c or a == 0:
         message_length = 0
     else:
-        # x = (-b+- sqrt(b^2-4ac))/2a, quadratic
         quadratic_solution1 = (-b + math.sqrt(b * b - 4 * a * c)) / (2 * a)
         quadratic_solution2 = (-b - math.sqrt(b * b - 4 * a * c)) / (2 * a)
         if abs(quadratic_solution1) < abs(quadratic_solution2):
             quadratic_solution = quadratic_solution1
         else:
             quadratic_solution = quadratic_solution2
-        # p = x/(x−1/2), where p is message length
+
         message_length = abs(quadratic_solution / (quadratic_solution - 0.50))
 
     return message_length
 
+def image_analyser(img, masks):
+    image_filename = Image.open(img).convert("RGB")
+    width, height = image_filename.size
 
-def image_analyser(img, chosen_mask):
-    # chosen_mask = [[0, 1, 0]]
-    image_filename = Image.open(img)
+    # Select the appropriate mask based on the image dimensions
+    if width < 128 or height < 128:
+        chosen_mask = masks[0]  # Use m0 for images smaller than 128x128
+    elif width < 512 or height < 512:
+        chosen_mask = masks[1]  # Use m1 for images smaller than 512x512
+    else:
+        chosen_mask = masks[2]  # Use m2 for images 512x512 or larger
+
+    # Print debug information
+    print(f"Image dimensions: {width}x{height}")
+    print(f"Chosen mask size: {len(chosen_mask)}x{len(chosen_mask[0])}")
+
+    # Generate the negative mask
     neg_mask = []
-
-    # neg_mask = [[0, 1, 0]]
     for l in chosen_mask:
         neg_mask.append(list(l))
 
-    # neg_mask = [[0, -1, 0]]
     for r in range(len(neg_mask)):
         for c in range(len(neg_mask[0])):
             if neg_mask[r][c] == 1:
@@ -260,42 +226,43 @@ def image_analyser(img, chosen_mask):
 
     pix = splitpixels(image_filename)
 
-    # displays the size of the chosen mask
-    print("")
-    print("Mask size = ", len(chosen_mask[0]), "x", len(chosen_mask))
-
-    # analyses the pixels to determine what percent of them may contain embedded content
     print("")
     print("Analysing LSBs")
+
     gpercent = analyseLSBs(pix, chosen_mask, neg_mask)
 
-    # controls any errors within the calculations
     print("")
-    # if message length is 0
     if gpercent == 0:
         print("Unable to calculate the percent of the pixels")
-
-        print("")
         encodedpercent = "?"
+        return encodedpercent,False
     else:
-        # calculates and displays the total percentage of pixels that are likely to be encoded
         encodedpercent = gpercent
         print("")
         totalpercent = (encodedpercent * 100)
-        print("Total Percent of pixels likely to contain embedded data: ", round(totalpercent, 2), "%")
-        width, height = image_filename.size
-        totalpix = int(width) * int(height)
-        # the size of the file is calculated by multiplying the percent of encoded pixels by the total number of pixels
+        print("Total Percent of pixels likely to contain embedded data: {:.3f}%".format(totalpercent))
+        totalpix = width * height
+        data = (encodedpercent * totalpix)
+        print("Approximately {:.3f} bits of data".format(data))
+        print("Encoded Percent: {:.3f}".format(encodedpercent))
 
-        data = ((encodedpercent * totalpix))
-        print("Approximately ", round(data, 2), " bits of data")
+        if encodedpercent < 0.07:
+            return False
+        else:
+            return True
 
-    return encodedpercent
 
 
 
-# mask defined
-m2 = [[0, 0, 0], [0, 1, 0], [0, 0, 0]]
+# Masks
+masks = [
+    [[0, 1], [1, 0]],  # m0
+    [[0, 1, 1, 0]],  # m1
+    [[0, 0, 0], [0, 1, 0], [0, 0, 0]]  # m2
+]
 
-image_analyser("./steganography_image.png", m2)
 
+
+#Testing
+#print("TEST")
+#image_analyser("./maxresdefault(1).jpg", masks)
