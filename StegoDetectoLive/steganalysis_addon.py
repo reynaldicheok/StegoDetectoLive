@@ -100,12 +100,15 @@ def check_Stego(data, fileExtension):
     isStegoList.append(histogramIsStego)
 
     #RSAnalysis
-    RSAisStego = image_analyser(data,masks)
+    RSAisStego, RSAMetaData = image_analyser(data,masks)
     isStegoList.append(RSAisStego)
+    stegoMetadata["RSA"] = RSAisStego
 
     #SamplePairs
-    SPisStego = detect_stego(data)
+    SPisStego,SPMetaData = detect_stego(data)
     isStegoList.append(SPisStego)
+    stegoMetadata["SP"] = SPMetaData
+
 
     detections = isStegoList.count(True)
     if detections >= min_detections:
