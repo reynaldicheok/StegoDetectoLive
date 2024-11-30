@@ -11,7 +11,7 @@ def main():
     parser.add_argument('-F', action='store_true', help='Enable forward proxy mode')
 
     # Configures the behavior
-    parser.add_argument('-M', type=int, default=1, help='Minimum number of successful detections before blocking')
+    parser.add_argument('-M', type=int, default=1, help='Minimum number of successful algorithms before blocking')
     parser.add_argument('-T', action='store_true', help='This will allow all traffic to pass through the proxy. '
                                                         'Potential Steganography '
                                                         'image data will still be saved to the triage folder with its '
