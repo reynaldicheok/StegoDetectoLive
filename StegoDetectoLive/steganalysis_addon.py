@@ -6,7 +6,7 @@ from requests_toolbelt.multipart import decoder
 from modules.LSBAnalysis import lsb_stego_detection
 from modules.histogram import histogram
 from modules.RSAAnalysis import image_analyser
-from modules.SimplePairsAnalysis import detect_stego
+from modules.SamplePairsAnalysis import detect_stego
 import pyfsig
 
 # Load the configuration file
@@ -103,8 +103,8 @@ def check_Stego(data, fileExtension):
     RSAisStego = image_analyser(data,masks)
     isStegoList.append(RSAisStego)
 
-    #SimplePairs
-    SPisStego = detect_stego(data,0.1)
+    #SamplePairs
+    SPisStego = detect_stego(data)
     isStegoList.append(SPisStego)
 
     detections = isStegoList.count(True)
