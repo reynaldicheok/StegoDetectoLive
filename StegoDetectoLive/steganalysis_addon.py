@@ -12,8 +12,6 @@ with open("config.json", "r") as f:
     config = json.load(f)
     min_detections = config["min_detections"]
     allow_all_traffic_and_save_data = config["allow_all_traffic_and_save_data"]
-    print(min_detections)
-    print(allow_all_traffic_and_save_data)
 
 # Create a directory to store the images
 if not os.path.exists("triage"):
