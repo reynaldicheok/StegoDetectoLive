@@ -262,7 +262,7 @@ def image_analyser(img: bytes, masks):
 
 
 
-# Masks
+#Masks
 # masks = [
 #     [[0, 1], [1, 0]],  # m0
 #     [[0, 1, 1, 0]],  # m1
@@ -273,7 +273,7 @@ def image_analyser(img: bytes, masks):
 #
 # #Testing
 # #print("TEST")
-# with open("../Stego Images/testing.png", "rb") as f:
+# with open("../Stego Images/stego-test2-blind.png", "rb") as f:
 #     image_bytes = f.read()
 #
 #

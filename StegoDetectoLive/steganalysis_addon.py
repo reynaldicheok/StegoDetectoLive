@@ -3,10 +3,10 @@ from datetime import datetime
 from mitmproxy import http
 import json
 from requests_toolbelt.multipart import decoder
-from StegoDetectoLive.modules.LSBAnalysis import lsb_stego_detection
-from StegoDetectoLive.modules.histogram import histogram
-from StegoDetectoLive.modules.RSAAnalysis import image_analyser
-from StegoDetectoLive.modules.SimplePairsAnalysis import detect_stego
+from modules.LSBAnalysis import lsb_stego_detection
+from modules.histogram import histogram
+from modules.RSAAnalysis import image_analyser
+from modules.SimplePairsAnalysis import detect_stego
 import pyfsig
 
 # Load the configuration file

@@ -5,7 +5,7 @@ import imagehash
 from scipy.spatial import distance
 import io
 
-from StegoDetectoLive.modules.database_generation import database_generation
+from modules.database_generation import database_generation
 
 
 def hammingdistance(a, b):

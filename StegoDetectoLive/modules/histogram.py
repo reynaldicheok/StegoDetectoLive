@@ -1,6 +1,6 @@
 import numpy as np
 import cv2
-from StegoDetectoLive.modules.DatabaseLogic import getSimilarImages
+from modules.DatabaseLogic import getSimilarImages
 
 # this function generates a histogram, comparing the pixel values and no. pixels between two images
 def histogram(suspect_image: bytes):
