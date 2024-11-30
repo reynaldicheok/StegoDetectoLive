@@ -5,6 +5,8 @@ import json
 from requests_toolbelt.multipart import decoder
 from StegoDetectoLive.modules.LSBAnalysis import lsb_stego_detection
 from StegoDetectoLive.modules.histogram import histogram
+from StegoDetectoLive.modules.RSAAnalysis import image_analyser
+from StegoDetectoLive.modules.SimplePairsAnalysis import detect_stego
 import pyfsig
 
 # Load the configuration file
@@ -82,6 +84,11 @@ def response(flow: http.HTTPFlow) -> None:
 def check_Stego(data, fileExtension):
     isStegoList = []
     stegoMetadata = {}
+    masks = [
+        [[0, 1], [1, 0]],  # m0
+        [[0, 1, 1, 0]],  # m1
+        [[0, 0, 0], [0, 1, 0], [0, 0, 0]]  # m2
+    ]
     # Check if the image is steganography
     # LSB
     lsbIsStego, lsbMetadata = lsb_stego_detection(data)
@@ -91,6 +98,14 @@ def check_Stego(data, fileExtension):
     # Histogram
     histogramIsStego = histogram(data)
     isStegoList.append(histogramIsStego)
+
+    #RSAnalysis
+    RSAisStego = image_analyser(data,masks)
+    isStegoList.append(RSAisStego)
+
+    #SimplePairs
+    SPisStego = detect_stego(data,0.1)
+    isStegoList.append(SPisStego)
 
     detections = isStegoList.count(True)
     if detections >= min_detections:

@@ -1,5 +1,6 @@
 from PIL import Image
 import math
+from io import BytesIO
 
 # Function to extract pixel values from an image and organize them into a matrix
 def splitpixels(img):
@@ -196,8 +197,9 @@ def analyseLSBs(imageBox, mask, neg_mask):
 
     return message_length
 
-def image_analyser(img, masks):
-    image_filename = Image.open(img).convert("RGB")
+def image_analyser(img: bytes, masks):
+    image_filename = Image.open(BytesIO(img)).convert("RGB")
+
     width, height = image_filename.size
 
     # Select the appropriate mask based on the image dimensions
@@ -255,14 +257,20 @@ def image_analyser(img, masks):
 
 
 # Masks
-masks = [
-    [[0, 1], [1, 0]],  # m0
-    [[0, 1, 1, 0]],  # m1
-    [[0, 0, 0], [0, 1, 0], [0, 0, 0]]  # m2
-]
-
-
-
-#Testing
-#print("TEST")
-#image_analyser("./maxresdefault(1).jpg", masks)
+# masks = [
+#     [[0, 1], [1, 0]],  # m0
+#     [[0, 1, 1, 0]],  # m1
+#     [[0, 0, 0], [0, 1, 0], [0, 0, 0]]  # m2
+# ]
+#
+#
+#
+# #Testing
+# #print("TEST")
+# with open("../Stego Images/testing.png", "rb") as f:
+#     image_bytes = f.read()
+#
+#
+# # Analyze the image using bytes
+# result = image_analyser(image_bytes, masks)
+# print("Result:", result)
