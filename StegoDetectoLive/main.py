@@ -2,6 +2,7 @@ import os
 import argparse
 import json
 
+
 def main():
     parser = argparse.ArgumentParser(description='StegoDetectoLive')
 
@@ -11,10 +12,11 @@ def main():
 
     # Configures the behavior
     parser.add_argument('-M', type=int, default=1, help='Minimum number of successful detections before blocking')
-    parser.add_argument('-T', action='store_true', help='This will allow all traffic to pass through the proxy. All '
-                                                        'image data will be saved to the triage folder with its '
+    parser.add_argument('-T', action='store_true', help='This will allow all traffic to pass through the proxy. '
+                                                        'Potential Steganography '
+                                                        'image data will still be saved to the triage folder with its '
                                                         'respective metadata.')
-    
+
     # Configures the proxy
     parser.add_argument('-P', type=int, default=8080, help='Port number to run the proxy')
 
@@ -49,6 +51,7 @@ def main():
 
     # Run the command in the background
     os.system(command)
+
 
 if __name__ == '__main__':
     main()
