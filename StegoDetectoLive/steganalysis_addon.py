@@ -77,7 +77,11 @@ def response(flow: http.HTTPFlow) -> None:
     if isImage:
         to_kill = check_Stego(flow.response.content, fileExtension)
         if to_kill:
-            flow.kill()
+            flow.response = http.Response.make(
+                403,
+                b"Potential Stenography",
+                {"Content-Type": "text/plain"}
+            )
             return
 
 
