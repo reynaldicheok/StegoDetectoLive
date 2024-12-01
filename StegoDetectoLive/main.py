@@ -27,14 +27,14 @@ def main():
         with open("config.json", "r") as f:
             config = json.load(f)
             config["min_detections"] = args.M
-            config["allow_all_traffic_and_save_data"] = args.T
+            config["transparentMode"] = args.T
         with open("config.json", "w") as f:
             json.dump(config, f)
     else:
         with open("config.json", "w") as f:
             config = {
                 "min_detections": args.M,
-                "allow_all_traffic_and_save_data": args.T
+                "transparentMode": args.T
             }
             json.dump(config, f, indent=4)
 
